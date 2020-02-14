@@ -36,7 +36,7 @@ object State
   } yield ()
 
   def get[S]: State[S, S] = State(s => (s, s))
-  def set[S](s: S) : State[S, Unit] = State(_ => s, ())
+  def set[S](s: S) : State[S, Unit] = State(_ => ((),s))
 
 object rng
 
@@ -92,7 +92,7 @@ object rng
         nonNegativeLessThan(n)
     }
 
-object candy {
+object candy
 
   enum Input
     case Coin
@@ -106,6 +106,9 @@ object candy {
   object Coins
     def apply(coins: Int): Coins = coins
 
+  extension CoinsOps on (c: Coins)
+    def toInt: Int = c
+  
 
   case class Locked()
   case class Open()
@@ -119,18 +122,19 @@ object candy {
   * 3. Tuning the knob on a loxked machine or inserting a coin into an unlocked machine does nothing
   * 4. A machine that's out of candy ignores all inputs
   */
+  val update: Input => Machine => Machine = i => m => 
+    (i, m) match
+      case (Input.Coin, Machine(Locked(), ca, co)) if ca.toInt >= 1 => Machine(Open(), ca, co.toInt + 1) 
+      case (Input.Turn, Machine(Open(), ca, co)) => Machine(Locked(), ca.toInt -1, co)
+      case (Input.Turn, Machine(Locked(), _ , _ )) => m
+      case (Input.Coin, Machine(Open(), _ , _ )) => m
+      case (_, Machine(_, 0, _)) => m
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Candies, Coins)] = 
-    def process(input: Input): State[Machine, (Candies, Coins)] = input match 
-      case Coin() => ???
-      case Turn() => ???
 
-    inputs match
-      case head :: tail => process(head).flatMap(_ => simulateMachine(tail))
-      case Nil => ???
-
-  val m = Machine(new Locked, Candies(1), Coins(1))
-}
+  def simulateMachine(inputs: List[Input]): State[Machine, (Candies, Coins)] = for 
+    _ <- State.sequence(inputs map (State.modify[Machine] _ compose update))
+    m <- State.get
+  yield (m.candies, m.coins) 
 
 
   // old implementation

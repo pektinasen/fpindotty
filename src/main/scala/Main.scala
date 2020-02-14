@@ -28,5 +28,12 @@ object Main extends App {
     // for {
     //   (n, rng2) <- rng.nextInt
     // }
+
+    import state.candy._
+    import state.candy.Input._
+    println(
+        simulateMachine(List(Coin, Turn, Turn, Coin, Coin, Turn, Turn )).run(Machine(Locked(), Candies(3), Coins(0)))
+    )
+
     println("-" * 50)
 }

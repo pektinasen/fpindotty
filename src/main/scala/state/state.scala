@@ -1,6 +1,6 @@
 package state
 
-case class State[S, +A](run: S => (A, S)) with
+case class State[S, +A](run: S => (A, S)):
 
   import State._
 
@@ -16,7 +16,8 @@ case class State[S, +A](run: S => (A, S)) with
   })
 
 
-object State
+object State:
+
   def unit[S, A](a: A): State[S, A] = State((a, _))
 
   def both[S, A,B](ra: State[S, A], rb: State[S, B]): State[S, (A,B)] = 
@@ -30,20 +31,20 @@ object State
         r.map2(ss)(_ :: _).run(s)
   })
 
-  def modify[S](f: S => S): State[S, Unit] = for {
+  def modify[S](f: S => S): State[S, Unit] = for
     s <- get
     _ <- set(f(s))
-  } yield ()
+  yield ()
 
   def get[S]: State[S, S] = State(s => (s, s))
   def set[S](s: S) : State[S, Unit] = State(_ => ((),s))
 
-object rng
+object rng:
 
-  trait RNG
+  trait RNG:
     def nextInt: (Int, RNG)
 
-  case class SimpleRandom(seed: Long) extends RNG
+  case class SimpleRandom(seed: Long) extends RNG:
     def nextInt: (Int, RNG) =
       val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFL
       val nextRNG = SimpleRandom(newSeed)
@@ -92,21 +93,21 @@ object rng
         nonNegativeLessThan(n)
     }
 
-object candy
+object candy:
 
-  enum Input
+  enum Input:
     case Coin
     case Turn
 
   opaque type Candies = Int
-  object Candies
+  object Candies:
     def apply(candies: Int): Candies = candies
   
   opaque type Coins = Int
-  object Coins
+  object Coins:
     def apply(coins: Int): Coins = coins
 
-  extension CoinsOps on (c: Coins)
+  extension CoinsOps on (c: Coins):
     def toInt: Int = c
   
 
@@ -124,11 +125,16 @@ object candy
   */
   val update: Input => Machine => Machine = i => m => 
     (i, m) match
-      case (Input.Coin, Machine(Locked(), ca, co)) if ca.toInt >= 1 => Machine(Open(), ca, co.toInt + 1) 
-      case (Input.Turn, Machine(Open(), ca, co)) => Machine(Locked(), ca.toInt -1, co)
-      case (Input.Turn, Machine(Locked(), _ , _ )) => m
-      case (Input.Coin, Machine(Open(), _ , _ )) => m
-      case (_, Machine(_, 0, _)) => m
+      case (Input.Coin, Machine(Locked(), ca, co)) if ca.toInt >= 1 =>
+        Machine(Open(), ca, co.toInt + 1) 
+      case (Input.Turn, Machine(Open(), ca, co)) => 
+        Machine(Locked(), ca.toInt -1, co)
+      case (Input.Turn, Machine(Locked(), _ , _ )) => 
+        m
+      case (Input.Coin, Machine(Open(), _ , _ )) => 
+        m
+      case (_, Machine(_, 0, _)) => 
+        m
 
 
   def simulateMachine(inputs: List[Input]): State[Machine, (Candies, Coins)] = for 
